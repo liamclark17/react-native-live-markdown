@@ -17,8 +17,29 @@
 #import <RNLiveMarkdown/RCTTextInput+AdaptiveImageGlyph.h>
 
 #import <objc/runtime.h>
+#include <algorithm>
+#include <string>
+#include <vector>
 
 using namespace facebook::react;
+
+static NSArray<NSValue *> *ProtectedRangesFromProps(const std::vector<int> &starts, const std::vector<int> &lengths)
+{
+  NSMutableArray<NSValue *> *ranges = [NSMutableArray array];
+  size_t count = std::min(starts.size(), lengths.size());
+
+  for (size_t index = 0; index < count; index++) {
+    int start = starts[index];
+    int length = lengths[index];
+    if (start < 0 || length <= 0) {
+      continue;
+    }
+
+    [ranges addObject:[NSValue valueWithRange:NSMakeRange((NSUInteger)start, (NSUInteger)length)]];
+  }
+
+  return ranges;
+}
 
 @implementation MarkdownTextInputDecoratorComponentView {
   RCTMarkdownUtils *_markdownUtils;
@@ -157,6 +178,7 @@ using namespace facebook::react;
 
     // register delegate for fixing cursor position after blockquote
     _markdownBackedTextInputDelegate = [[MarkdownBackedTextInputDelegate alloc] initWithTextView:_textView];
+    [self updateProtectedRangeDeleteHandler];
   } else {
     react_native_assert(false && "Cannot enable Markdown for this type of TextInput.");
   }
@@ -224,10 +246,44 @@ using namespace facebook::react;
     _markdownStyle = [[RCTMarkdownStyle alloc] initWithStruct:newViewProps.markdownStyle];
     [_markdownUtils setMarkdownStyle:_markdownStyle];
 
+    if (_markdownBackedTextInputDelegate != nil) {
+      _markdownBackedTextInputDelegate.protectedRanges = ProtectedRangesFromProps(newViewProps.protectedRangeStarts, newViewProps.protectedRangeLengths);
+      [self updateProtectedRangeDeleteHandler];
+    }
+
     // TODO: call applyNewStyles only if needed
     [self applyNewStyles];
 
     [super updateProps:props oldProps:oldProps];
+}
+
+- (void)updateProtectedRangeDeleteHandler
+{
+  if (_markdownBackedTextInputDelegate == nil) {
+    return;
+  }
+
+  __weak __typeof(self) weakSelf = self;
+  _markdownBackedTextInputDelegate.onProtectedRangeDelete = ^(NSRange attemptedRange, NSString *replacementText, NSRange protectedRange) {
+    __strong __typeof(self) strongSelf = weakSelf;
+    if (strongSelf == nil || strongSelf->_eventEmitter == nullptr) {
+      return;
+    }
+
+    auto eventEmitter = std::static_pointer_cast<const MarkdownTextInputDecoratorViewEventEmitter>(strongSelf->_eventEmitter);
+    if (eventEmitter == nullptr) {
+      return;
+    }
+
+    MarkdownTextInputDecoratorViewEventEmitter::OnProtectedRangeDelete event = {
+      .start = static_cast<int>(attemptedRange.location),
+      .length = static_cast<int>(attemptedRange.length),
+      .replacementText = std::string([replacementText UTF8String]),
+      .rangeStart = static_cast<int>(protectedRange.location),
+      .rangeLength = static_cast<int>(protectedRange.length),
+    };
+    eventEmitter->onProtectedRangeDelete(event);
+  };
 }
 
 - (void)applyNewStyles

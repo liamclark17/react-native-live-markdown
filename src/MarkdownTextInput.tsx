@@ -4,7 +4,7 @@ import type {TextInputProps} from 'react-native';
 import {createSerializable, createWorkletRuntime} from 'react-native-worklets';
 import type {SerializableRef, WorkletFunction, WorkletRuntime} from 'react-native-worklets';
 import MarkdownTextInputDecoratorViewNativeComponent from './MarkdownTextInputDecoratorViewNativeComponent';
-import type {MarkdownStyle} from './MarkdownTextInputDecoratorViewNativeComponent';
+import type {MarkdownStyle, ProtectedRangeDeleteEvent} from './MarkdownTextInputDecoratorViewNativeComponent';
 import NativeLiveMarkdownModule from './NativeLiveMarkdownModule';
 import {mergeMarkdownStyleWithDefault} from './styleUtils';
 import type {PartialMarkdownStyle} from './styleUtils';
@@ -61,11 +61,18 @@ interface MarkdownTextInputProps extends TextInputProps, InlineImagesInputProps 
   markdownStyle?: PartialMarkdownStyle;
   formatSelection?: (text: string, selectionStart: number, selectionEnd: number, formatCommand: string) => FormatSelectionResult;
   parser: (value: string) => MarkdownRange[];
+  protectedRanges?: ProtectedTextRange[];
+  onProtectedRangeDelete?: (event: ProtectedRangeDeleteEvent) => void;
 }
 
 type FormatSelectionResult = {
   updatedText: string;
   cursorOffset: number;
+};
+
+type ProtectedTextRange = {
+  start: number;
+  length: number;
 };
 
 type MarkdownTextInput = TextInput & React.Component<MarkdownTextInputProps>;
@@ -92,21 +99,24 @@ function processMarkdownStyle(input: PartialMarkdownStyle | undefined): Markdown
 }
 
 const MarkdownTextInput = React.forwardRef<MarkdownTextInput, MarkdownTextInputProps>((props, ref) => {
-  const markdownStyle = React.useMemo(() => processMarkdownStyle(props.markdownStyle), [props.markdownStyle]);
+  const {markdownStyle: rawMarkdownStyle, protectedRanges, onProtectedRangeDelete, ...textInputProps} = props;
+  const markdownStyle = React.useMemo(() => processMarkdownStyle(rawMarkdownStyle), [rawMarkdownStyle]);
+  const protectedRangeStarts = React.useMemo(() => protectedRanges?.map((range) => range.start) ?? [], [protectedRanges]);
+  const protectedRangeLengths = React.useMemo(() => protectedRanges?.map((range) => range.length) ?? [], [protectedRanges]);
 
-  if (props.parser === undefined) {
+  if (textInputProps.parser === undefined) {
     throw new Error('[react-native-live-markdown] `parser` is undefined');
   }
 
   // eslint-disable-next-line no-underscore-dangle
-  const workletHash = (props.parser as {__workletHash?: number}).__workletHash;
+  const workletHash = (textInputProps.parser as {__workletHash?: number}).__workletHash;
   if (workletHash === undefined) {
     throw new Error('[react-native-live-markdown] `parser` is not a worklet');
   }
 
   const parserId = React.useMemo(() => {
-    return registerParser(props.parser);
-  }, [props.parser]);
+    return registerParser(textInputProps.parser);
+  }, [textInputProps.parser]);
 
   React.useEffect(() => {
     return () => unregisterParser(parserId);
@@ -117,9 +127,12 @@ const MarkdownTextInput = React.forwardRef<MarkdownTextInput, MarkdownTextInputP
       style={styles.displayContents}
       markdownStyle={markdownStyle}
       parserId={parserId}
+      protectedRangeStarts={protectedRangeStarts}
+      protectedRangeLengths={protectedRangeLengths}
+      onProtectedRangeDelete={(event) => onProtectedRangeDelete?.(event.nativeEvent)}
     >
       <TextInput
-        {...props}
+        {...textInputProps}
         ref={ref}
       />
     </MarkdownTextInputDecoratorViewNativeComponent>

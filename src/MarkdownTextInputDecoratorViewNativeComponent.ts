@@ -1,7 +1,7 @@
 import {codegenNativeComponent} from 'react-native';
 import type {ColorValue, ViewProps} from 'react-native';
 
-import type {Float, Int32} from 'react-native/Libraries/Types/CodegenTypes';
+import type {DirectEventHandler, Float, Int32} from 'react-native/Libraries/Types/CodegenTypes';
 
 interface CodeBlockStyle {
   fontFamily: string;
@@ -85,10 +85,21 @@ interface MarkdownStyle {
 interface NativeProps extends ViewProps {
   markdownStyle: MarkdownStyle;
   parserId: Int32;
+  protectedRangeStarts: readonly Int32[];
+  protectedRangeLengths: readonly Int32[];
+  onProtectedRangeDelete?: DirectEventHandler<ProtectedRangeDeleteEvent>;
 }
+
+type ProtectedRangeDeleteEvent = {
+  start: Int32;
+  length: Int32;
+  replacementText: string;
+  rangeStart: Int32;
+  rangeLength: Int32;
+};
 
 export default codegenNativeComponent<NativeProps>('MarkdownTextInputDecoratorView', {
   interfaceOnly: true,
 });
 
-export type {MarkdownStyle};
+export type {MarkdownStyle, ProtectedRangeDeleteEvent};

@@ -73,7 +73,30 @@
 
 - (nonnull NSString *)textInputShouldChangeText:(nonnull NSString *)text inRange:(NSRange)range
 {
+  if ([self shouldProtectChangeInRange:range replacementText:text]) {
+    return nil;
+  }
+
   return [_originalTextInputDelegate textInputShouldChangeText:text inRange:range];
+}
+
+- (BOOL)shouldProtectChangeInRange:(NSRange)range replacementText:(NSString *)text
+{
+  if (range.length == 0 || self.onProtectedRangeDelete == nil) {
+    return NO;
+  }
+
+  for (NSValue *rangeValue in self.protectedRanges) {
+    NSRange protectedRange = [rangeValue rangeValue];
+    if (NSIntersectionRange(range, protectedRange).length == 0) {
+      continue;
+    }
+
+    self.onProtectedRangeDelete(range, text, protectedRange);
+    return YES;
+  }
+
+  return NO;
 }
 
 - (BOOL)textInputShouldEndEditing
