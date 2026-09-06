@@ -82,7 +82,7 @@
 
 - (BOOL)shouldProtectChangeInRange:(NSRange)range replacementText:(NSString *)text
 {
-  if (self.onProtectedRangeDelete == nil) {
+  if (self.onProtectedTextChange == nil) {
     return NO;
   }
 
@@ -97,7 +97,7 @@
         continue;
       }
 
-      self.onProtectedRangeDelete(range, text, protectedRange);
+      self.onProtectedTextChange(range, text, protectedRange);
       return YES;
     }
 
@@ -107,7 +107,7 @@
   for (NSValue *rangeValue in self.protectedRanges) {
     NSRange protectedRange = [rangeValue rangeValue];
     if (NSIntersectionRange(range, protectedRange).length > 0) {
-      self.onProtectedRangeDelete(range, text, protectedRange);
+      self.onProtectedTextChange(range, text, protectedRange);
       return YES;
     }
   }

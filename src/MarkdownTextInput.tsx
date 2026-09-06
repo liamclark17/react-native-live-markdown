@@ -4,7 +4,7 @@ import type {TextInputProps} from 'react-native';
 import {createSerializable, createWorkletRuntime} from 'react-native-worklets';
 import type {SerializableRef, WorkletFunction, WorkletRuntime} from 'react-native-worklets';
 import MarkdownTextInputDecoratorViewNativeComponent from './MarkdownTextInputDecoratorViewNativeComponent';
-import type {MarkdownStyle, ProtectedRangeDeleteEvent} from './MarkdownTextInputDecoratorViewNativeComponent';
+import type {MarkdownStyle, ProtectedTextChangeEvent} from './MarkdownTextInputDecoratorViewNativeComponent';
 import NativeLiveMarkdownModule from './NativeLiveMarkdownModule';
 import {mergeMarkdownStyleWithDefault} from './styleUtils';
 import type {PartialMarkdownStyle} from './styleUtils';
@@ -63,7 +63,7 @@ interface MarkdownTextInputProps extends TextInputProps, InlineImagesInputProps 
   parser: (value: string) => MarkdownRange[];
   protectedRanges?: ProtectedTextRange[];
   protectedInsertionRanges?: ProtectedTextRange[];
-  onProtectedRangeDelete?: (event: ProtectedRangeDeleteEvent) => void;
+  onProtectedTextChange?: (event: ProtectedTextChangeEvent) => void;
 }
 
 type FormatSelectionResult = {
@@ -100,7 +100,7 @@ function processMarkdownStyle(input: PartialMarkdownStyle | undefined): Markdown
 }
 
 const MarkdownTextInput = React.forwardRef<MarkdownTextInput, MarkdownTextInputProps>((props, ref) => {
-  const {markdownStyle: rawMarkdownStyle, protectedRanges, protectedInsertionRanges, onProtectedRangeDelete, ...textInputProps} = props;
+  const {markdownStyle: rawMarkdownStyle, protectedRanges, protectedInsertionRanges, onProtectedTextChange, ...textInputProps} = props;
   const markdownStyle = React.useMemo(() => processMarkdownStyle(rawMarkdownStyle), [rawMarkdownStyle]);
   const protectedRangeStarts = React.useMemo(() => protectedRanges?.map((range) => range.start) ?? [], [protectedRanges]);
   const protectedRangeLengths = React.useMemo(() => protectedRanges?.map((range) => range.length) ?? [], [protectedRanges]);
@@ -134,7 +134,7 @@ const MarkdownTextInput = React.forwardRef<MarkdownTextInput, MarkdownTextInputP
       protectedRangeLengths={protectedRangeLengths}
       protectedInsertionRangeStarts={protectedInsertionRangeStarts}
       protectedInsertionRangeLengths={protectedInsertionRangeLengths}
-      onProtectedRangeDelete={(event) => onProtectedRangeDelete?.(event.nativeEvent)}
+      onProtectedTextChange={(event) => onProtectedTextChange?.(event.nativeEvent)}
     >
       <TextInput
         {...textInputProps}

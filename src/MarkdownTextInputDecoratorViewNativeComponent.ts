@@ -89,10 +89,10 @@ interface NativeProps extends ViewProps {
   protectedRangeLengths: readonly Int32[];
   protectedInsertionRangeStarts: readonly Int32[];
   protectedInsertionRangeLengths: readonly Int32[];
-  onProtectedRangeDelete?: DirectEventHandler<ProtectedRangeDeleteEvent>;
+  onProtectedTextChange?: DirectEventHandler<ProtectedTextChangeEvent>;
 }
 
-type ProtectedRangeDeleteEvent = {
+type ProtectedTextChangeEvent = {
   start: Int32;
   length: Int32;
   replacementText: string;
@@ -104,4 +104,4 @@ export default codegenNativeComponent<NativeProps>('MarkdownTextInputDecoratorVi
   interfaceOnly: true,
 });
 
-export type {MarkdownStyle, ProtectedRangeDeleteEvent};
+export type {MarkdownStyle, ProtectedTextChangeEvent};

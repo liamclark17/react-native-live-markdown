@@ -9,7 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy) NSArray<NSValue *> *protectedRanges;
 @property (nonatomic, copy) NSArray<NSValue *> *protectedInsertionRanges;
-@property (nonatomic, copy, nullable) void (^onProtectedRangeDelete)(NSRange attemptedRange, NSString *replacementText, NSRange protectedRange);
+@property (nonatomic, copy, nullable) void (^onProtectedTextChange)(NSRange attemptedRange, NSString *replacementText, NSRange protectedRange);
 
 @end
 

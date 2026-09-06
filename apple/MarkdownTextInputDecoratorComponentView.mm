@@ -178,7 +178,7 @@ static NSArray<NSValue *> *ProtectedRangesFromProps(const std::vector<int> &star
 
     // register delegate for fixing cursor position after blockquote
     _markdownBackedTextInputDelegate = [[MarkdownBackedTextInputDelegate alloc] initWithTextView:_textView];
-    [self updateProtectedRangeDeleteHandler];
+    [self updateProtectedTextChangeHandler];
   } else {
     react_native_assert(false && "Cannot enable Markdown for this type of TextInput.");
   }
@@ -249,7 +249,7 @@ static NSArray<NSValue *> *ProtectedRangesFromProps(const std::vector<int> &star
     if (_markdownBackedTextInputDelegate != nil) {
       _markdownBackedTextInputDelegate.protectedRanges = ProtectedRangesFromProps(newViewProps.protectedRangeStarts, newViewProps.protectedRangeLengths);
       _markdownBackedTextInputDelegate.protectedInsertionRanges = ProtectedRangesFromProps(newViewProps.protectedInsertionRangeStarts, newViewProps.protectedInsertionRangeLengths);
-      [self updateProtectedRangeDeleteHandler];
+      [self updateProtectedTextChangeHandler];
     }
 
     // TODO: call applyNewStyles only if needed
@@ -258,14 +258,14 @@ static NSArray<NSValue *> *ProtectedRangesFromProps(const std::vector<int> &star
     [super updateProps:props oldProps:oldProps];
 }
 
-- (void)updateProtectedRangeDeleteHandler
+- (void)updateProtectedTextChangeHandler
 {
   if (_markdownBackedTextInputDelegate == nil) {
     return;
   }
 
   __weak __typeof(self) weakSelf = self;
-  _markdownBackedTextInputDelegate.onProtectedRangeDelete = ^(NSRange attemptedRange, NSString *replacementText, NSRange protectedRange) {
+  _markdownBackedTextInputDelegate.onProtectedTextChange = ^(NSRange attemptedRange, NSString *replacementText, NSRange protectedRange) {
     __strong __typeof(self) strongSelf = weakSelf;
     if (strongSelf == nil || strongSelf->_eventEmitter == nullptr) {
       return;
@@ -276,14 +276,14 @@ static NSArray<NSValue *> *ProtectedRangesFromProps(const std::vector<int> &star
       return;
     }
 
-    MarkdownTextInputDecoratorViewEventEmitter::OnProtectedRangeDelete event = {
+    MarkdownTextInputDecoratorViewEventEmitter::OnProtectedTextChange event = {
       .start = static_cast<int>(attemptedRange.location),
       .length = static_cast<int>(attemptedRange.length),
       .replacementText = std::string([replacementText UTF8String]),
       .rangeStart = static_cast<int>(protectedRange.location),
       .rangeLength = static_cast<int>(protectedRange.length),
     };
-    eventEmitter->onProtectedRangeDelete(event);
+    eventEmitter->onProtectedTextChange(event);
   };
 }
 
