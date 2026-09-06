@@ -87,6 +87,8 @@ interface NativeProps extends ViewProps {
   parserId: Int32;
   protectedRangeStarts: readonly Int32[];
   protectedRangeLengths: readonly Int32[];
+  protectedInsertionRangeStarts: readonly Int32[];
+  protectedInsertionRangeLengths: readonly Int32[];
   onProtectedRangeDelete?: DirectEventHandler<ProtectedRangeDeleteEvent>;
 }
 

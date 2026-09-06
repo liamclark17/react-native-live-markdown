@@ -82,21 +82,42 @@
 
 - (BOOL)shouldProtectChangeInRange:(NSRange)range replacementText:(NSString *)text
 {
-  if (range.length == 0 || self.onProtectedRangeDelete == nil) {
+  if (self.onProtectedRangeDelete == nil) {
+    return NO;
+  }
+
+  if (range.length == 0) {
+    if (text.length == 0) {
+      return NO;
+    }
+
+    for (NSValue *rangeValue in self.protectedInsertionRanges) {
+      NSRange protectedRange = [rangeValue rangeValue];
+      if (![self insertionRange:protectedRange containsLocation:range.location]) {
+        continue;
+      }
+
+      self.onProtectedRangeDelete(range, text, protectedRange);
+      return YES;
+    }
+
     return NO;
   }
 
   for (NSValue *rangeValue in self.protectedRanges) {
     NSRange protectedRange = [rangeValue rangeValue];
-    if (NSIntersectionRange(range, protectedRange).length == 0) {
-      continue;
+    if (NSIntersectionRange(range, protectedRange).length > 0) {
+      self.onProtectedRangeDelete(range, text, protectedRange);
+      return YES;
     }
-
-    self.onProtectedRangeDelete(range, text, protectedRange);
-    return YES;
   }
 
   return NO;
+}
+
+- (BOOL)insertionRange:(NSRange)range containsLocation:(NSUInteger)location
+{
+  return location >= range.location && location <= NSMaxRange(range);
 }
 
 - (BOOL)textInputShouldEndEditing

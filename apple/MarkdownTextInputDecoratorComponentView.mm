@@ -248,6 +248,7 @@ static NSArray<NSValue *> *ProtectedRangesFromProps(const std::vector<int> &star
 
     if (_markdownBackedTextInputDelegate != nil) {
       _markdownBackedTextInputDelegate.protectedRanges = ProtectedRangesFromProps(newViewProps.protectedRangeStarts, newViewProps.protectedRangeLengths);
+      _markdownBackedTextInputDelegate.protectedInsertionRanges = ProtectedRangesFromProps(newViewProps.protectedInsertionRangeStarts, newViewProps.protectedInsertionRangeLengths);
       [self updateProtectedRangeDeleteHandler];
     }
 

@@ -62,6 +62,7 @@ interface MarkdownTextInputProps extends TextInputProps, InlineImagesInputProps 
   formatSelection?: (text: string, selectionStart: number, selectionEnd: number, formatCommand: string) => FormatSelectionResult;
   parser: (value: string) => MarkdownRange[];
   protectedRanges?: ProtectedTextRange[];
+  protectedInsertionRanges?: ProtectedTextRange[];
   onProtectedRangeDelete?: (event: ProtectedRangeDeleteEvent) => void;
 }
 
@@ -99,10 +100,12 @@ function processMarkdownStyle(input: PartialMarkdownStyle | undefined): Markdown
 }
 
 const MarkdownTextInput = React.forwardRef<MarkdownTextInput, MarkdownTextInputProps>((props, ref) => {
-  const {markdownStyle: rawMarkdownStyle, protectedRanges, onProtectedRangeDelete, ...textInputProps} = props;
+  const {markdownStyle: rawMarkdownStyle, protectedRanges, protectedInsertionRanges, onProtectedRangeDelete, ...textInputProps} = props;
   const markdownStyle = React.useMemo(() => processMarkdownStyle(rawMarkdownStyle), [rawMarkdownStyle]);
   const protectedRangeStarts = React.useMemo(() => protectedRanges?.map((range) => range.start) ?? [], [protectedRanges]);
   const protectedRangeLengths = React.useMemo(() => protectedRanges?.map((range) => range.length) ?? [], [protectedRanges]);
+  const protectedInsertionRangeStarts = React.useMemo(() => protectedInsertionRanges?.map((range) => range.start) ?? [], [protectedInsertionRanges]);
+  const protectedInsertionRangeLengths = React.useMemo(() => protectedInsertionRanges?.map((range) => range.length) ?? [], [protectedInsertionRanges]);
 
   if (textInputProps.parser === undefined) {
     throw new Error('[react-native-live-markdown] `parser` is undefined');
@@ -129,6 +132,8 @@ const MarkdownTextInput = React.forwardRef<MarkdownTextInput, MarkdownTextInputP
       parserId={parserId}
       protectedRangeStarts={protectedRangeStarts}
       protectedRangeLengths={protectedRangeLengths}
+      protectedInsertionRangeStarts={protectedInsertionRangeStarts}
+      protectedInsertionRangeLengths={protectedInsertionRangeLengths}
       onProtectedRangeDelete={(event) => onProtectedRangeDelete?.(event.nativeEvent)}
     >
       <TextInput
